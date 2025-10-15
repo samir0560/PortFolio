@@ -1,7 +1,5 @@
-node_modules/
+# add to .gitignore (root of repo)
 .env
+backend/.env
 uploads/
-*.log
-.DS_Store
-.vscode/
-.idea/
+node_modules/

@@ -3,3 +3,5 @@
 backend/.env
 uploads/
 node_modules/
+*.log
+logs/

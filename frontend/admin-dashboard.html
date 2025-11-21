@@ -1267,7 +1267,7 @@
                     <h4>Site Settings</h4>
                     <div class="form-group">
                         <label for="site-title">Site Title</label>
-                        <input type="text" id="site-title" class="form-control" value="Samir Chaudhary Portfolio">
+                        <input type="text" id="site-title" class="form-control" value="Samir Chaudhary">
                     </div>
                     <div class="form-group">
                         <label for="site-description">Site Description</label>
@@ -1480,6 +1480,100 @@
                 bounceRate: '0%'
             }
         };
+
+        // Figure out where the API is running (supports file:// and alternate ports)
+        const API_HOST_PREFIX = (() => {
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:5000';
+            }
+
+            const origin = window.location.origin;
+            if (!origin || origin === 'null') {
+                return 'http://localhost:5000';
+            }
+
+            try {
+                const parsedOrigin = new URL(origin);
+                if (parsedOrigin.port === '5000') {
+                    return '';
+                }
+                if (parsedOrigin.hostname === 'localhost' || parsedOrigin.hostname === '127.0.0.1') {
+                    return 'http://localhost:5000';
+                }
+            } catch (error) {
+                console.warn('Unable to determine API host prefix:', error);
+            }
+
+            return '';
+        })();
+
+        // Automatically prepend the API host when requests start with /api
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = (resource, init) => {
+            if (typeof resource === 'string' && resource.startsWith('/api')) {
+                const normalizedResource = API_HOST_PREFIX ? `${API_HOST_PREFIX}${resource}` : resource;
+                return nativeFetch(normalizedResource, init);
+            }
+            return nativeFetch(resource, init);
+        };
+
+        function updateAboutImagePreview(imageUrl) {
+            const preview = document.getElementById('about-image-preview');
+            if (!preview) return;
+
+            if (imageUrl) {
+                preview.innerHTML = `<img src="${imageUrl}" alt="Profile Preview">`;
+            } else {
+                preview.innerHTML = '<div class="image-placeholder">No image selected</div>';
+            }
+        }
+
+        function populateSettingsForm(settings = {}) {
+            const assignValue = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = value || '';
+                }
+            };
+
+            assignValue('site-title', settings.siteTitle);
+            assignValue('site-description', settings.siteDescription);
+            assignValue('about-name', settings.aboutName);
+            assignValue('about-description', settings.aboutDescription);
+            assignValue('contact-location', settings.contactLocation);
+            assignValue('contact-email', settings.contactEmail);
+            assignValue('contact-phone', settings.contactPhone);
+            assignValue('contact-website', settings.contactWebsite);
+
+            const socialLinks = settings.socialLinks || {};
+
+            assignValue('social-github', settings.socialGithub ?? socialLinks.github ?? '');
+            assignValue('social-linkedin', settings.socialLinkedin ?? socialLinks.linkedin ?? '');
+            assignValue('social-twitter', settings.socialTwitter ?? socialLinks.twitter ?? '');
+            assignValue('social-dribbble', settings.socialDribbble ?? socialLinks.dribbble ?? '');
+
+            updateAboutImagePreview(settings.aboutImage);
+        }
+
+        function persistSettingsFromServer(serverSettings, shouldUpdateForm = false) {
+            if (!serverSettings) return;
+
+            const normalizedSettings = {
+                ...adminData.settings,
+                ...serverSettings,
+                socialGithub: serverSettings.socialLinks?.github ?? adminData.settings.socialGithub ?? '',
+                socialLinkedin: serverSettings.socialLinks?.linkedin ?? adminData.settings.socialLinkedin ?? '',
+                socialTwitter: serverSettings.socialLinks?.twitter ?? adminData.settings.socialTwitter ?? '',
+                socialDribbble: serverSettings.socialLinks?.dribbble ?? adminData.settings.socialDribbble ?? ''
+            };
+
+            adminData.settings = normalizedSettings;
+            localStorage.setItem('adminData', JSON.stringify(adminData));
+
+            if (shouldUpdateForm) {
+                populateSettingsForm(normalizedSettings);
+            }
+        }
 
         // DOM Elements
         const currentTimeEl = document.getElementById('current-time');
@@ -1994,19 +2088,7 @@
             try {
                 const response = await apiCall('/settings');
                 if (response && response.success) {
-                    const settings = response.data;
-                    
-                    // Update adminData with server settings
-                    adminData.settings = {
-                        ...adminData.settings,
-                        ...settings,
-                        socialGithub: settings.socialLinks?.github || '',
-                        socialLinkedin: settings.socialLinks?.linkedin || '',
-                        socialTwitter: settings.socialLinks?.twitter || '',
-                        socialDribbble: settings.socialLinks?.dribbble || ''
-                    };
-                    
-                    localStorage.setItem('adminData', JSON.stringify(adminData));
+                    persistSettingsFromServer(response.data, true);
                 }
             } catch (error) {
                 console.error('Failed to load settings from server:', error);
@@ -2089,13 +2171,21 @@
         // File Upload Preview
         function handleImagePreview(input, previewId) {
             const file = input.files[0];
+            const preview = document.getElementById(previewId);
+            if (!preview) return;
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const preview = document.getElementById(previewId);
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    if (previewId === 'about-image-preview') {
+                        updateAboutImagePreview(e.target.result);
+                    } else {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    }
                 };
                 reader.readAsDataURL(file);
+            } else if (previewId === 'about-image-preview') {
+                updateAboutImagePreview(adminData.settings.aboutImage);
             }
         }
 
@@ -2259,22 +2349,17 @@
                 }
                 
                 // Update local admin data
-                adminData.settings = {
-                    ...adminData.settings,
-                    ...data.data
-                };
+                persistSettingsFromServer(data.data, true);
                 adminData.username = document.getElementById('admin-username').value;
                 localStorage.setItem('adminData', JSON.stringify(adminData));
                 
-                showToast('Settings saved successfully! Page will refresh in 2 seconds.');
+                showToast('Settings saved successfully!', 'success');
                 
                 // Trigger real-time update
                 broadcastUpdate('settings');
                 
-                // Refresh page after 2 seconds
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                // Clear the file input so future uploads trigger change events
+                aboutImageUpload.value = '';
                 
             } catch (error) {
                 console.error('Error saving settings:', error);
@@ -2286,23 +2371,7 @@
         async function initializeDashboard() {
             // Load settings into form
             document.getElementById('admin-username').value = adminData.username;
-            document.getElementById('site-title').value = adminData.settings.siteTitle;
-            document.getElementById('site-description').value = adminData.settings.siteDescription;
-            document.getElementById('about-name').value = adminData.settings.aboutName;
-            document.getElementById('about-description').value = adminData.settings.aboutDescription;
-            document.getElementById('contact-location').value = adminData.settings.contactLocation;
-            document.getElementById('contact-email').value = adminData.settings.contactEmail;
-            document.getElementById('contact-phone').value = adminData.settings.contactPhone;
-            document.getElementById('contact-website').value = adminData.settings.contactWebsite;
-            document.getElementById('social-github').value = adminData.settings.socialGithub;
-            document.getElementById('social-linkedin').value = adminData.settings.socialLinkedin;
-            document.getElementById('social-twitter').value = adminData.settings.socialTwitter;
-            document.getElementById('social-dribbble').value = adminData.settings.socialDribbble;
-            
-            // Load about image preview if exists
-            if (adminData.settings.aboutImage) {
-                document.getElementById('about-image-preview').innerHTML = `<img src="${adminData.settings.aboutImage}" alt="Profile Preview">`;
-            }
+            populateSettingsForm(adminData.settings);
             
             // Load data from server, fallback to local data
             try {

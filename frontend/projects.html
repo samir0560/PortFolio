@@ -343,8 +343,30 @@
     </section>
 
     <script>
-        // API Base URL
-        const API_BASE = 'http://localhost:5000/api';
+        // API Base URL - works for file://, dev servers, or production
+        const API_BASE = (() => {
+            const defaultHost = 'http://localhost:5000';
+            const origin = window.location.origin;
+
+            if (window.location.protocol === 'file:' || !origin || origin === 'null') {
+                return `${defaultHost}/api`;
+            }
+
+            return `${origin}/api`;
+        })();
+
+        function normalizeProjectUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed) return '';
+            if (/^https?:\/\//i.test(trimmed)) {
+                return trimmed;
+            }
+            if (/^\/\//.test(trimmed)) {
+                return `https:${trimmed}`;
+            }
+            return `https://${trimmed}`;
+        }
 
         // Technology Icons Mapping
         const technologyIcons = {
@@ -443,6 +465,9 @@
                 }
 
                 projects.forEach(project => {
+                    const liveLink = normalizeProjectUrl(project.liveUrl);
+                    const codeLink = normalizeProjectUrl(project.githubUrl);
+                    
                     const projectElement = document.createElement('div');
                     projectElement.className = 'project-card';
                     
@@ -465,8 +490,8 @@
                     // Create action buttons
                     const actionButtons = `
                         <div class="project-actions">
-                            ${project.liveUrl ? `<a href="${project.liveUrl}" target="_blank" class="btn btn-secondary">Live Demo</a>` : ''}
-                            ${project.githubUrl ? `<a href="${project.githubUrl}" target="_blank" class="btn btn-outline">Get Code</a>` : ''}
+                            ${liveLink ? `<a href="${liveLink}" target="_blank" rel="noopener" class="btn btn-secondary">Live Demo</a>` : ''}
+                            ${codeLink ? `<a href="${codeLink}" target="_blank" rel="noopener" class="btn btn-outline">Get Code</a>` : ''}
                         </div>
                     `;
 
@@ -505,6 +530,9 @@
             }
 
             projects.forEach(project => {
+                const liveLink = normalizeProjectUrl(project.liveUrl);
+                const codeLink = normalizeProjectUrl(project.githubUrl);
+                
                 const projectElement = document.createElement('div');
                 projectElement.className = 'project-card';
                 
@@ -518,8 +546,8 @@
                 // Create action buttons
                 const actionButtons = `
                     <div class="project-actions">
-                        ${project.liveUrl ? `<a href="${project.liveUrl}" target="_blank" class="btn btn-secondary">Live Demo</a>` : ''}
-                        ${project.githubUrl ? `<a href="${project.githubUrl}" target="_blank" class="btn btn-outline">Get Code</a>` : ''}
+                        ${liveLink ? `<a href="${liveLink}" target="_blank" rel="noopener" class="btn btn-secondary">Live Demo</a>` : ''}
+                        ${codeLink ? `<a href="${codeLink}" target="_blank" rel="noopener" class="btn btn-outline">Get Code</a>` : ''}
                     </div>
                 `;
 

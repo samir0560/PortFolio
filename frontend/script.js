@@ -179,6 +179,18 @@ function loadFallbackData() {
 }
 
 // Section Update Functions
+function normalizeProjectUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+    if (/^\/\//.test(trimmed)) {
+        return `https:${trimmed}`;
+    }
+    return `https://${trimmed}`;
+}
 function updateHeroSection(settings, projects, skills, analytics) {
     const elements = {
         heroName: document.getElementById('heroName'),
@@ -299,6 +311,9 @@ function updateProjectsSection(projects) {
         const featuredProjects = projects.slice(0, 3);
         
         featuredProjects.forEach((project, index) => {
+            const liveLink = normalizeProjectUrl(project.liveUrl);
+            const codeLink = normalizeProjectUrl(project.githubUrl);
+            
             const projectCard = document.createElement('div');
             projectCard.className = 'project-card';
             projectCard.setAttribute('data-category', project.category || 'other');
@@ -316,8 +331,8 @@ function updateProjectsSection(projects) {
                          onerror="this.src='https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
                     <div class="project-overlay">
                         <div class="project-actions">
-                            ${project.liveUrl ? `<a href="${project.liveUrl}" target="_blank" class="action-btn live-demo-btn" title="Live Demo"><i class="fas fa-external-link-alt"></i><span>Live Demo</span></a>` : ''}
-                            ${project.githubUrl ? `<a href="${project.githubUrl}" target="_blank" class="action-btn view-code-btn" title="View Code"><i class="fab fa-github"></i><span>View Code</span></a>` : ''}
+                            ${liveLink ? `<a href="${liveLink}" target="_blank" rel="noopener" class="action-btn live-demo-btn" title="Live Demo"><i class="fas fa-external-link-alt"></i><span>Live Demo</span></a>` : ''}
+                            ${codeLink ? `<a href="${codeLink}" target="_blank" rel="noopener" class="action-btn view-code-btn" title="View Code"><i class="fab fa-github"></i><span>View Code</span></a>` : ''}
                         </div>
                     </div>
                 </div>
@@ -334,8 +349,8 @@ function updateProjectsSection(projects) {
                         </div>
                     </div>
                     <div class="project-links">
-                        ${project.liveUrl ? `<a href="${project.liveUrl}" target="_blank" class="project-link live-link"><i class="fas fa-globe"></i> Live Demo</a>` : ''}
-                        ${project.githubUrl ? `<a href="${project.githubUrl}" target="_blank" class="project-link code-link"><i class="fab fa-github"></i> Source Code</a>` : ''}
+                        ${liveLink ? `<a href="${liveLink}" target="_blank" rel="noopener" class="project-link live-link"><i class="fas fa-globe"></i> Live Demo</a>` : ''}
+                        ${codeLink ? `<a href="${codeLink}" target="_blank" rel="noopener" class="project-link code-link"><i class="fab fa-github"></i> Source Code</a>` : ''}
                     </div>
                 </div>
             `;

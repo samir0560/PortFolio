@@ -6,19 +6,48 @@ const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+// Cloudinary config - supports both custom and standard env variable names
+const cloudinaryConfig = {
+    cloud_name: process.env.CLOUDINARY_CLOUD || process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_KEY || process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_SECRET || process.env.CLOUDINARY_API_SECRET
+};
+
+cloudinary.config(cloudinaryConfig);
+
+if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
+    console.warn('⚠️  Cloudinary configuration incomplete. Please set CLOUDINARY_CLOUD (or CLOUDINARY_CLOUD_NAME), CLOUDINARY_KEY (or CLOUDINARY_API_KEY), and CLOUDINARY_SECRET (or CLOUDINARY_API_SECRET).');
+}
 
 // Middleware
-app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://localhost:5000'],
+const allowedOrigins = new Set([
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'http://localhost:5000'
+]);
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.has(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
     credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static('../frontend'));
-app.use('/uploads', express.static('uploads'));
+app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -250,25 +279,12 @@ const Visitor = mongoose.model('Visitor', VisitorSchema);
 const Activity = mongoose.model('Activity', ActivitySchema);
 const Settings = mongoose.model('Settings', SettingsSchema);
 
-// Multer configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = 'uploads/';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'project-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
+// Multer configuration - use memoryStorage so we can upload buffers to Cloudinary
+const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
+        if (file.mimetype && file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
             cb(new Error('Only image files are allowed!'), false);
@@ -300,9 +316,9 @@ const authenticateAdmin = (req, res, next) => {
 // Utility functions
 const getClientIP = (req) => {
     return req.ip || 
-           req.connection.remoteAddress || 
-           req.socket.remoteAddress ||
-           (req.connection.socket ? req.connection.socket.remoteAddress : null);
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress ||
+           (req.connection?.socket ? req.connection.socket.remoteAddress : null);
 };
 
 const logActivity = async (activity, details, type = 'project') => {
@@ -310,6 +326,36 @@ const logActivity = async (activity, details, type = 'project') => {
         await Activity.create({ activity, details, type });
     } catch (error) {
         console.error('Error logging activity:', error);
+    }
+};
+
+// Helper: upload buffer to Cloudinary
+const uploadBufferToCloudinary = (buffer, folder = 'portfolio') => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder },
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result); // result.secure_url, result.public_id, etc.
+            }
+        );
+        stream.end(buffer);
+    });
+};
+
+// Helper: extract Cloudinary public_id from a Cloudinary URL
+const getCloudinaryPublicIdFromUrl = (url) => {
+    try {
+        // Match portion after /upload/ and strip version and extension
+        // Example URL:
+        // https://res.cloudinary.com/<cloud>/image/upload/v1610000000/folder/subfolder/public_id.jpg
+        const m = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z0-9]+(?:\?.*)?$/);
+        if (m && m[1]) {
+            return m[1]; // "folder/subfolder/public_id"
+        }
+        return null;
+    } catch (e) {
+        return null;
     }
 };
 
@@ -408,14 +454,14 @@ app.post('/api/visitors/track', async (req, res) => {
             if (DEVELOPMENT_MODE) {
                 // Count every reload in development mode
                 visitor.count += 1;
-                if (!visitor.ipAddresses.includes(clientIP)) {
+                if (clientIP && !visitor.ipAddresses.includes(clientIP)) {
                     visitor.ipAddresses.push(clientIP);
                 }
                 await visitor.save();
                 console.log(`✅ Visitor tracked (DEV MODE): Count = ${visitor.count}, IP = ${clientIP}`);
             } else {
                 // Production mode: Only count unique IPs per day
-                if (!visitor.ipAddresses.includes(clientIP)) {
+                if (clientIP && !visitor.ipAddresses.includes(clientIP)) {
                     visitor.ipAddresses.push(clientIP);
                     visitor.count += 1;
                     await visitor.save();
@@ -428,7 +474,7 @@ app.post('/api/visitors/track', async (req, res) => {
             visitor = await Visitor.create({
                 date: today,
                 count: 1,
-                ipAddresses: [clientIP]
+                ipAddresses: clientIP ? [clientIP] : []
             });
             console.log(`🎉 First visitor of the day! Count = 1, IP = ${clientIP}`);
         }
@@ -580,12 +626,18 @@ app.get('/api/settings', async (req, res) => {
 app.put('/api/settings', authenticateAdmin, upload.single('aboutImage'), async (req, res) => {
     try {
         const updates = req.body;
-        
-        // Handle profile image upload
-        if (req.file) {
-            updates.aboutImage = `/uploads/${req.file.filename}`;
+
+        // Handle profile image upload via Cloudinary if file provided
+        if (req.file && req.file.buffer) {
+            try {
+                const result = await uploadBufferToCloudinary(req.file.buffer, 'portfolio/profiles');
+                updates.aboutImage = result.secure_url;
+            } catch (uErr) {
+                console.error('Cloudinary upload failed for settings image:', uErr);
+                return res.status(500).json({ success: false, error: 'Image upload failed' });
+            }
         }
-        
+
         // Handle social links
         if (updates.socialLinks) {
             try {
@@ -594,28 +646,45 @@ app.put('/api/settings', authenticateAdmin, upload.single('aboutImage'), async (
                 // If not JSON, keep as is
             }
         }
-        
+
         let settings = await Settings.findOne();
         if (!settings) {
             settings = await Settings.create(updates);
         } else {
-            // If there's a new image and old image exists, optionally delete old image
-            if (req.file && settings.aboutImage && settings.aboutImage.startsWith('/uploads/')) {
-                const oldImagePath = path.join(__dirname, settings.aboutImage);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
+            // If there's a new image and old image exists, delete old image (local or cloud)
+            if (req.file && settings.aboutImage) {
+                // Old local upload path like "/uploads/filename.jpg"
+                if (settings.aboutImage.startsWith('/uploads/') || settings.aboutImage.startsWith('uploads/')) {
+                    const oldImagePath = path.join(__dirname, settings.aboutImage.replace(/^\//, ''));
+                    try {
+                        if (fs.existsSync(oldImagePath)) {
+                            fs.unlinkSync(oldImagePath);
+                        }
+                    } catch (e) {
+                        console.warn('Could not delete old local settings image:', e.message);
+                    }
+                } else if (settings.aboutImage.includes('res.cloudinary.com')) {
+                    // Attempt to delete from Cloudinary
+                    const publicId = getCloudinaryPublicIdFromUrl(settings.aboutImage);
+                    if (publicId) {
+                        try {
+                            await cloudinary.uploader.destroy(publicId);
+                        } catch (e) {
+                            console.warn('Could not delete old cloudinary settings image:', e.message);
+                        }
+                    }
                 }
             }
-            
+
             settings = await Settings.findOneAndUpdate(
                 {},
                 { $set: updates },
                 { new: true }
             );
         }
-        
+
         await logActivity('Settings Updated', 'Website settings updated', 'settings');
-        
+
         res.json({ 
             success: true, 
             data: settings 
@@ -652,8 +721,14 @@ app.post('/api/projects', authenticateAdmin, upload.single('image'), async (req,
         const { title, category, description, technologies, liveUrl, githubUrl, featured } = req.body;
         
         let imageUrl;
-        if (req.file) {
-            imageUrl = `/uploads/${req.file.filename}`;
+        if (req.file && req.file.buffer) {
+            try {
+                const result = await uploadBufferToCloudinary(req.file.buffer, 'portfolio/projects');
+                imageUrl = result.secure_url;
+            } catch (uErr) {
+                console.error('Cloudinary upload failed for project image:', uErr);
+                return res.status(500).json({ success: false, error: 'Image upload failed' });
+            }
         } else if (req.body.imageUrl) {
             imageUrl = req.body.imageUrl;
         } else {
@@ -723,15 +798,62 @@ app.put('/api/projects/:id', authenticateAdmin, upload.single('image'), async (r
         }
         
         let imageUrl = project.image;
-        if (req.file) {
-            if (project.image && project.image.startsWith('/uploads/')) {
-                const oldImagePath = path.join(__dirname, project.image);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
+        // If a new file uploaded, upload to Cloudinary and remove old (local or cloud)
+        if (req.file && req.file.buffer) {
+            // delete old image if exists
+            if (project.image) {
+                if (project.image.startsWith('/uploads/') || project.image.startsWith('uploads/')) {
+                    const oldImagePath = path.join(__dirname, project.image.replace(/^\//, ''));
+                    try {
+                        if (fs.existsSync(oldImagePath)) {
+                            fs.unlinkSync(oldImagePath);
+                        }
+                    } catch (e) {
+                        console.warn('Could not delete old local project image:', e.message);
+                    }
+                } else if (project.image.includes('res.cloudinary.com')) {
+                    const publicId = getCloudinaryPublicIdFromUrl(project.image);
+                    if (publicId) {
+                        try {
+                            await cloudinary.uploader.destroy(publicId);
+                        } catch (e) {
+                            console.warn('Could not delete old cloudinary project image:', e.message);
+                        }
+                    }
                 }
             }
-            imageUrl = `/uploads/${req.file.filename}`;
+
+            // upload new one
+            try {
+                const result = await uploadBufferToCloudinary(req.file.buffer, 'portfolio/projects');
+                imageUrl = result.secure_url;
+            } catch (uErr) {
+                console.error('Cloudinary upload failed for project update image:', uErr);
+                return res.status(500).json({ success: false, error: 'Image upload failed' });
+            }
         } else if (req.body.imageUrl && req.body.imageUrl !== project.image) {
+            // If admin provided a different external URL, attempt to delete old if it was cloud/local
+            if (project.image) {
+                if (project.image.startsWith('/uploads/') || project.image.startsWith('uploads/')) {
+                    const oldImagePath = path.join(__dirname, project.image.replace(/^\//, ''));
+                    try {
+                        if (fs.existsSync(oldImagePath)) {
+                            fs.unlinkSync(oldImagePath);
+                        }
+                    } catch (e) {
+                        console.warn('Could not delete old local project image:', e.message);
+                    }
+                } else if (project.image.includes('res.cloudinary.com')) {
+                    const publicId = getCloudinaryPublicIdFromUrl(project.image);
+                    if (publicId) {
+                        try {
+                            await cloudinary.uploader.destroy(publicId);
+                        } catch (e) {
+                            console.warn('Could not delete old cloudinary project image:', e.message);
+                        }
+                    }
+                }
+            }
             imageUrl = req.body.imageUrl;
         }
         
@@ -796,30 +918,45 @@ app.delete('/api/projects/:id', authenticateAdmin, async (req, res) => {
             });
         }
         
-        // Delete project image file from uploads folder
+        // Delete project image file from uploads folder OR cloudinary
         if (project.image) {
-            let imagePath;
-            if (project.image.startsWith('/uploads/')) {
-                imagePath = path.join(__dirname, project.image);
-            } else if (project.image.startsWith('uploads/')) {
-                imagePath = path.join(__dirname, project.image);
-            } else {
-                // Handle full URLs or other formats
-                const imageFileName = project.image.split('/').pop();
-                imagePath = path.join(__dirname, 'uploads', imageFileName);
-            }
-            
-            // Delete the image file if it exists
-            try {
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                    console.log(`✅ Deleted project image: ${imagePath}`);
-                } else {
-                    console.log(`⚠️ Image file not found: ${imagePath}`);
+            if (project.image.startsWith('/uploads/') || project.image.startsWith('uploads/')) {
+                const imagePath = path.join(__dirname, project.image.replace(/^\//, ''));
+                try {
+                    if (fs.existsSync(imagePath)) {
+                        fs.unlinkSync(imagePath);
+                        console.log(`✅ Deleted project image: ${imagePath}`);
+                    } else {
+                        console.log(`⚠️ Image file not found: ${imagePath}`);
+                    }
+                } catch (fileError) {
+                    console.error(`❌ Error deleting image file: ${fileError.message}`);
+                    // Continue with project deletion even if file deletion fails
                 }
-            } catch (fileError) {
-                console.error(`❌ Error deleting image file: ${fileError.message}`);
-                // Continue with project deletion even if file deletion fails
+            } else if (project.image.includes('res.cloudinary.com')) {
+                const publicId = getCloudinaryPublicIdFromUrl(project.image);
+                if (publicId) {
+                    try {
+                        await cloudinary.uploader.destroy(publicId);
+                        console.log(`✅ Deleted cloudinary image with public_id: ${publicId}`);
+                    } catch (e) {
+                        console.warn('Could not delete cloudinary image:', e.message);
+                    }
+                } else {
+                    console.log('⚠️ Could not determine cloudinary public_id from URL');
+                }
+            } else {
+                // If not local or cloudinary (external url), attempt to remove any local file with same filename (best-effort)
+                const imageFileName = project.image.split('/').pop();
+                const imagePath = path.join(__dirname, 'uploads', imageFileName);
+                try {
+                    if (fs.existsSync(imagePath)) {
+                        fs.unlinkSync(imagePath);
+                        console.log(`✅ Deleted fallback image: ${imagePath}`);
+                    }
+                } catch (e) {
+                    // ignore
+                }
             }
         }
         

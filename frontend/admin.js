@@ -21,6 +21,7 @@ const dashboardSections = document.querySelectorAll('.dashboard-section');
 const closeModalBtns = document.querySelectorAll('.close-modal');
 const saveSettingsBtn = document.getElementById('save-settings');
 const imageUploadOptions = document.querySelectorAll('.upload-option');
+const aboutImageUpload = document.getElementById('about-image-upload');
 
 // API Base URL
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -186,6 +187,24 @@ function setupEventListeners() {
                     preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
                 }
                 reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (aboutImageUpload) {
+        aboutImageUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            const preview = document.getElementById('about-image-preview');
+            if (!preview) return;
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '<div class="image-placeholder">No image selected</div>';
             }
         });
     }
@@ -453,28 +472,57 @@ async function handleChangePassword() {
 // Handle Save Settings
 async function handleSaveSettings() {
     try {
-        // Get all settings values
-        const settings = {
-            siteTitle: document.getElementById('site-title').value,
-            siteDescription: document.getElementById('site-description').value,
-            aboutName: document.getElementById('about-name').value,
-            aboutDescription: document.getElementById('about-description').value,
-            contactLocation: document.getElementById('contact-location').value,
-            contactEmail: document.getElementById('contact-email').value,
-            contactPhone: document.getElementById('contact-phone').value,
-            contactWebsite: document.getElementById('contact-website').value,
-            footerTitle: document.getElementById('site-title').value, // Use site title as footer title
-            footerDescription: document.getElementById('site-description').value, // Use site description as footer description
-            copyrightName: document.getElementById('about-name').value, // Use about name as copyright name
-            socialLinks: {
-                github: document.getElementById('social-github').value,
-                linkedin: document.getElementById('social-linkedin').value,
-                twitter: document.getElementById('social-twitter').value,
-                dribbble: document.getElementById('social-dribbble').value
-            }
+        const formData = new FormData();
+        formData.append('siteTitle', document.getElementById('site-title').value);
+        formData.append('siteDescription', document.getElementById('site-description').value);
+        formData.append('aboutName', document.getElementById('about-name').value);
+        formData.append('aboutDescription', document.getElementById('about-description').value);
+        formData.append('contactLocation', document.getElementById('contact-location').value);
+        formData.append('contactEmail', document.getElementById('contact-email').value);
+        formData.append('contactPhone', document.getElementById('contact-phone').value);
+        formData.append('contactWebsite', document.getElementById('contact-website').value);
+
+        const socialLinks = {
+            github: document.getElementById('social-github').value,
+            linkedin: document.getElementById('social-linkedin').value,
+            twitter: document.getElementById('social-twitter').value,
+            dribbble: document.getElementById('social-dribbble').value
         };
-        
-        await updateSettings(settings);
+        formData.append('socialLinks', JSON.stringify(socialLinks));
+
+        const profileImageFile = aboutImageUpload ? aboutImageUpload.files[0] : null;
+        if (profileImageFile) {
+            formData.append('aboutImage', profileImageFile);
+        }
+
+        const token = localStorage.getItem('adminToken');
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+            method: 'PUT',
+            headers: {
+                ...(token && { 'Authorization': token })
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Failed to save settings');
+        }
+
+        // Refresh settings from server to ensure the dashboard reflects the latest data
+        await loadSettings();
+
+        if (data.data?.aboutImage) {
+            const preview = document.getElementById('about-image-preview');
+            if (preview) {
+                preview.innerHTML = `<img src="${data.data.aboutImage}" alt="Profile Preview">`;
+            }
+        }
+
+        if (aboutImageUpload) {
+            aboutImageUpload.value = '';
+        }
+
         showToast('Settings saved successfully', 'success');
         await renderRecentActivity();
     } catch (error) {
@@ -1012,7 +1060,8 @@ async function changeAdminPassword(currentPassword, newPassword) {
 // Load settings
 async function loadSettings() {
     try {
-        const settings = await apiCall('/settings');
+        const response = await apiCall('/settings');
+        const settings = response.data || response || {};
         
         // Populate form fields with current settings
         document.getElementById('site-title').value = settings.siteTitle || '';
@@ -1027,6 +1076,15 @@ async function loadSettings() {
         document.getElementById('social-linkedin').value = settings.socialLinks?.linkedin || '';
         document.getElementById('social-twitter').value = settings.socialLinks?.twitter || '';
         document.getElementById('social-dribbble').value = settings.socialLinks?.dribbble || '';
+
+        const aboutPreview = document.getElementById('about-image-preview');
+        if (aboutPreview) {
+            if (settings.aboutImage) {
+                aboutPreview.innerHTML = `<img src="${settings.aboutImage}" alt="Profile Preview">`;
+            } else {
+                aboutPreview.innerHTML = '<div class="image-placeholder">No image selected</div>';
+            }
+        }
         
         return settings;
     } catch (error) {

@@ -33,13 +33,15 @@
 
 /* Dark theme variables */
 body.dark-theme {
-    --light: #0f172a;
-    --dark: #f8fafc;
-    --gray-100: #1e293b;
-    --gray-200: #334155;
-    --gray-300: #475569;
-    --white: #1e293b;
-    --black: #f8fafc;
+    --light: #000000;
+    --dark: #ffffff;
+    --gray-100: #f8fafc;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --white: #ffffff;
+    --black: #000000;
+    background: #000000;
+    color: #ffffff;
 }
 
 * {
@@ -95,9 +97,9 @@ body::before {
 
 /* Twinkling stars background for dark mode */
 body.dark-theme {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 30%, #24243e 60%, #1a1a2e 100%);
-    background-size: 400% 400%;
-    animation: gradientShift 20s ease infinite;
+    background: #000000;
+    background-size: auto;
+    animation: none;
 }
 
 body.dark-theme::after {
@@ -107,87 +109,13 @@ body.dark-theme::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 12, 41, 0.85);
+    background: rgba(0, 0, 0, 0.85);
     pointer-events: none;
     z-index: -1;
 }
 
 body.dark-theme::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(3px 3px at 20px 30px, #fff, transparent),
-        radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(2px 2px at 50px 160px, #eee, transparent),
-        radial-gradient(3px 3px at 90px 40px, #fff, transparent),
-        radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(2px 2px at 160px 120px, #fff, transparent),
-        radial-gradient(2px 2px at 200px 30px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(2px 2px at 230px 160px, #eee, transparent),
-        radial-gradient(3px 3px at 250px 60px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(2px 2px at 280px 100px, #ddd, transparent),
-        radial-gradient(2px 2px at 320px 50px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(3px 3px at 350px 140px, #fff, transparent),
-        radial-gradient(2px 2px at 380px 20px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(2px 2px at 420px 90px, #eee, transparent),
-        radial-gradient(2px 2px at 450px 150px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(3px 3px at 480px 70px, #fff, transparent),
-        radial-gradient(2px 2px at 520px 130px, #ddd, transparent),
-        radial-gradient(2px 2px at 560px 40px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(2px 2px at 600px 110px, #eee, transparent),
-        radial-gradient(2px 2px at 640px 60px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(3px 3px at 680px 150px, #fff, transparent),
-        radial-gradient(2px 2px at 720px 30px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(2px 2px at 760px 100px, #ddd, transparent),
-        radial-gradient(2px 2px at 800px 70px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(3px 3px at 840px 140px, #fff, transparent),
-        radial-gradient(2px 2px at 880px 50px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(1px 1px at 920px 120px, #fff, transparent),
-        radial-gradient(1px 1px at 960px 80px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(2px 2px at 1000px 150px, #eee, transparent),
-        radial-gradient(1px 1px at 1040px 40px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px at 1080px 100px, #ddd, transparent),
-        radial-gradient(2px 2px at 1120px 60px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(1px 1px at 1160px 130px, #fff, transparent),
-        radial-gradient(1px 1px at 1200px 90px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(2px 2px at 20px 200px, #eee, transparent),
-        radial-gradient(1px 1px at 60px 240px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(2px 2px at 100px 180px, #ddd, transparent),
-        radial-gradient(1px 1px at 140px 220px, #fff, transparent),
-        radial-gradient(2px 2px at 180px 260px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 220px 200px, #eee, transparent),
-        radial-gradient(2px 2px at 260px 240px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(1px 1px at 300px 180px, #ddd, transparent),
-        radial-gradient(2px 2px at 340px 220px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(1px 1px at 380px 260px, #fff, transparent),
-        radial-gradient(2px 2px at 420px 200px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px at 460px 240px, #eee, transparent),
-        radial-gradient(2px 2px at 500px 180px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 540px 220px, #ddd, transparent),
-        radial-gradient(2px 2px at 580px 260px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(1px 1px at 620px 200px, #fff, transparent),
-        radial-gradient(2px 2px at 660px 240px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(1px 1px at 700px 180px, #eee, transparent),
-        radial-gradient(2px 2px at 740px 220px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px at 780px 260px, #ddd, transparent),
-        radial-gradient(2px 2px at 820px 200px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 860px 240px, #fff, transparent),
-        radial-gradient(2px 2px at 900px 180px, rgba(255,255,255,0.95), transparent),
-        radial-gradient(1px 1px at 940px 220px, #eee, transparent),
-        radial-gradient(2px 2px at 980px 260px, rgba(255,255,255,0.7), transparent),
-        radial-gradient(1px 1px at 1020px 200px, #ddd, transparent),
-        radial-gradient(2px 2px at 1060px 240px, rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px at 1100px 180px, #fff, transparent),
-        radial-gradient(2px 2px at 1140px 220px, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 1180px 260px, #ddd, transparent),
-        radial-gradient(2px 2px at 1220px 200px, rgba(255,255,255,0.95), transparent);
-    pointer-events: none;
-    z-index: -1;
-    animation: twinkle 4s ease-in-out infinite alternate;
+    display: none;
 }
 
 /* Page loaded state for smooth entrance animations */
@@ -684,30 +612,49 @@ body.loaded .header {
 .nav-extras {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .theme-toggle {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background: var(--gray-100);
+    background: rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: var(--transition);
-    color: var(--gray-700);
-    font-size: 18px;
-    border: 2px solid transparent;
+    color: var(--white);
+    font-size: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .theme-toggle:hover {
-    background: var(--primary);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.admin-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
     color: var(--white);
-    transform: scale(1.1);
-    border-color: var(--primary);
-    box-shadow: var(--shadow);
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    transition: var(--transition);
+}
+
+.admin-pill:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(139, 92, 246, 0.5);
 }
 
 .live-time {
@@ -846,14 +793,15 @@ body.loaded .header {
 .name {
     font-size: 3.5rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    background: linear-gradient(120deg, #0f172a, #1d4ed8, #38bdf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    background-size: 400% 400%;
-    animation: gradientText 3s ease-in-out infinite, fadeInUp 0.8s ease-out 0.7s both;
+    background-size: 200% 200%;
+    animation: gradientText 4s ease-in-out infinite, fadeInUp 0.8s ease-out 0.7s both;
     display: block;
     margin-bottom: 1rem;
+    text-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
 @keyframes gradientText {
@@ -924,6 +872,11 @@ body.loaded .header {
     gap: 1rem;
     flex-wrap: wrap;
     animation: fadeInUp 0.6s ease-out 1.5s both;
+}
+
+body.dark-theme .hero::before,
+body.dark-theme .hero::after {
+    display: none;
 }
 
 .hero-image {
@@ -1705,7 +1658,8 @@ body.dark-theme .skill-category {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
     opacity: 0;
     transition: var(--transition);
-    z-index: 1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .project-card:hover {
@@ -1721,6 +1675,7 @@ body.dark-theme .skill-category {
     position: relative;
     height: 250px;
     overflow: hidden;
+    z-index: 1;
 }
 
 .project-image img {
@@ -1746,6 +1701,7 @@ body.dark-theme .skill-category {
     justify-content: center;
     opacity: 0;
     transition: var(--transition);
+    z-index: 2;
 }
 
 .project-card:hover .project-overlay {
@@ -1792,6 +1748,8 @@ body.dark-theme .skill-category {
 
 .project-content {
     padding: 1.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .project-header {
@@ -1935,6 +1893,69 @@ body.dark-theme .project-skills h4 {
 
 .projects-actions {
     text-align: center;
+}
+
+/* Dark theme overrides for sections */
+body.dark-theme .about,
+body.dark-theme .projects,
+body.dark-theme .skills,
+body.dark-theme .other-sites,
+body.dark-theme .contact {
+    background: rgba(0, 0, 0, 0.7);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .about::before,
+body.dark-theme .projects::before,
+body.dark-theme .skills::before,
+body.dark-theme .other-sites::before {
+    display: none;
+}
+
+body.dark-theme .about-text p,
+body.dark-theme .feature,
+body.dark-theme .feature span,
+body.dark-theme .project-description,
+body.dark-theme .project-skills h4,
+body.dark-theme .section-subtitle {
+    color: #ffffff;
+}
+
+body.dark-theme .feature {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .feature:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-theme .filter-btn {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+body.dark-theme .filter-btn.active,
+body.dark-theme .filter-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.2));
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #000000;
+}
+
+body.dark-theme .project-skills {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+body.dark-theme .project-links {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+body.dark-theme .project-link {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
 }
 
 /* Other Sites Section */
@@ -2509,18 +2530,18 @@ body.dark-theme .project-skills h4 {
 
 /* Dark Theme */
 body.dark-theme .header {
-    background: rgba(99, 102, 241, 0.2); /* Attractive indigo with transparency for dark theme */
-    border-bottom-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.15);
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.65);
 }
 
 body.dark-theme .header:hover {
-    box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.3);
+    box-shadow: 0 14px 40px 0 rgba(0, 0, 0, 0.75);
 }
 
 body.dark-theme .header.scrolled {
-    background: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 12px 32px 0 rgba(99, 102, 241, 0.25);
+    background: rgba(0, 0, 0, 0.95);
+    box-shadow: 0 14px 35px 0 rgba(0, 0, 0, 0.8);
 }
 
 /* Ensure nav links are visible in dark mode */
@@ -2548,14 +2569,26 @@ body.dark-theme .nav-link:hover {
 
 /* Ensure theme toggle is visible */
 body.dark-theme .theme-toggle {
-    background: var(--gray-800);
-    color: var(--gray-100);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+body.dark-theme .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 body.dark-theme .live-time {
-    background: var(--gray-800);
-    color: var(--gray-100);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-theme .admin-pill {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
 }
 
 /* Enhanced card visibility in dark mode */
@@ -2665,9 +2698,14 @@ body.dark-theme .footer-links h3,
 body.dark-theme .footer-services h3,
 body.dark-theme .footer-about p,
 body.dark-theme .footer-copyright,
-body.dark-theme .footer-legal a {
-    color: var(--gray-100);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+body.dark-theme .footer-legal a,
+body.dark-theme p,
+body.dark-theme span,
+body.dark-theme li,
+body.dark-theme label,
+body.dark-theme a {
+    color: #ffffff;
+    text-shadow: none;
 }
 
 body.dark-theme .footer-links ul li a,
@@ -2685,31 +2723,31 @@ body.dark-theme .footer-services ul li a:hover {
 
 body.dark-theme .feature,
 body.dark-theme .feature span {
-    color: var(--gray-200);
+    color: #ffffff;
 }
 
 body.dark-theme .stat-number,
 body.dark-theme .stat-label {
-    color: var(--gray-100);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    text-shadow: none;
 }
 
 body.dark-theme .hero-text,
 body.dark-theme .greeting,
 body.dark-theme .hero-subtitle,
 body.dark-theme .hero-description {
-    color: var(--gray-100);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+    text-shadow: none;
 }
 
 body.dark-theme .name {
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: none;
 }
 
 body.dark-theme .btn-outline {
-    color: var(--gray-100);
+    color: #ffffff;
     border: 2px solid rgba(255, 255, 255, 0.5);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
 }
 
 body.dark-theme .btn-outline:hover {
@@ -2719,13 +2757,12 @@ body.dark-theme .btn-outline:hover {
 
 /* Enhanced Dark Theme Footer */
 body.dark-theme .footer {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed); /* Darker gradient for dark theme */
-    color: var(--white);
+    background: #000000;
+    color: #ffffff;
 }
 
 body.dark-theme .footer::before {
-    background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 20%);
+    display: none;
 }
 
 /* Dark Theme Social Links */

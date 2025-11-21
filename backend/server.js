@@ -25,17 +25,32 @@ if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConf
 }
 
 // Middleware
-const allowedOrigins = new Set([
+// Default allowed origins for local development + common static hosts
+const defaultAllowed = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5500',
     'http://127.0.0.1:5500',
-    'http://localhost:5000'
-]);
+    'http://localhost:5000',
+    // Add your deployed frontend origin (fixes the CORS error you saw)
+    'https://portfolio-chuv.onrender.com'
+];
+
+// Optionally allow additional origins via environment variable FRONTEND_URL (comma separated)
+let envOrigins = [];
+if (process.env.FRONTEND_URL) {
+    envOrigins = process.env.FRONTEND_URL.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+const allowedOrigins = new Set([...defaultAllowed, ...envOrigins]);
 
 const corsOptions = {
     origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
+        // If no origin (e.g. server-to-server requests or curl), allow it
+        if (!origin) {
+            return callback(null, true);
+        }
+        if (allowedOrigins.has(origin)) {
             return callback(null, true);
         }
         return callback(new Error(`Not allowed by CORS: ${origin}`));
